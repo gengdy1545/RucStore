@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="content-section">
+        <h1>Shopping cart</h1><br>
+    </div>
+        {% if orderdetails %}
+            <div class="content-section">
+                <font size="5" color="green">
+                    <a href={{ url_for("confirm_order",id=cart.id) }}>Confirm order</a>
+                    &nbsp;&nbsp;&nbsp;&nbsp;Total price: {{ cart.total_price }}
+                </font>
+            </div>
+            {% for detail in orderdetails %}
+            <div class="content-section">
+                <a >Shipper: {{ detail.product.supplier.shipper}}</a><br>
+                <a >Product: {{ detail.product.name }}</a><br>
+                <a >Price: {{ detail.product.price }}</a><br>
+                <a >Count: {{ detail.count}}</a><br>
+                <a >Capacity: {{ detail.product.count }}</a><br><br>
+                <div >
+                    <a href={{ url_for("delete_product_from_shopping_car",id=detail.product.id) }}>Delete</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                    <a href={{ url_for("add_by_1",id=detail.product.id) }}>Increase</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                    <a href={{ url_for("delete_by_1",id=detail.product.id) }}>Reduce</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="content-section">
+                <a href={{ url_for("home") }}>Go shopping</a>
+            </div>
+        {% endif %}
+{% endblock %}

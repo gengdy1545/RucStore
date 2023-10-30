@@ -1,0 +1,22 @@
+{% extends "account_layout.html" %}
+{% block info %}
+    <h1>Manage product</h1>
+    {% if products %}
+        {% for product in products %}
+            <div class="content-section">
+                <a >Product name: {{ product.name }}</a><br>
+                <a >Product price: {{ product.price }}</a><br>
+                <a >Product count: {{ product.count }}</a><br>
+                <a>----------------------------------------------</a><br>
+                <a href={{ url_for("supplier_update_product",id=product.id) }}>Update</a>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <a href={{ url_for("supplier_delete_product",id=product.id) }}>Delete</a>
+            </div>
+        {% endfor %}
+        <div class="col-md-8">
+            <a href={{ url_for("supplier_new_product") }}>Add new product</a>
+        </div>
+    {% else %}
+        <a href={{ url_for("supplier_new_product") }}>Waiting for you to supply product</a>
+    {% endif %}
+{% endblock info %}

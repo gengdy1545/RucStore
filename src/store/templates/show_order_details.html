@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="content-section">
+        <h1>Order detail</h1><br>
+        <font size="5" color="green">Total price: {{ order.total_price }}</font><br>
+        <a>Order ID : {{ order.id }}</a><br>
+        <a>Consignee : {{ address.consignee }}</a><br>
+        <a>Telephone: {{ address.telephone }}</a><br>
+        <a>Address : {{ address.address }}</a><br>
+    </div>
+    {% if details %}
+        {% for detail in details %}
+        <div class="content-section">
+            <a>Product detail</a><br>
+            <a>Shipper : {{ detail.product.supplier.shipper}}</a><br>
+            <a>Name : {{ detail.product.name }}</a><br>
+            <a>Price : {{ detail.product.price }}</a><br>
+            <a>Count : {{ detail.count}}</a><br>
+        </div>
+        {% endfor %}
+    {% endif %}
+    {% if current_user.table_name =="Supplier"%}
+        <div class="content-section">
+            <font size="4" color="red" >
+                <a href={{ url_for("confirm_deliver_order",id=order.id) }}>Confirm delivery</a>
+            </font>
+        </div>
+    {% endif %}
+{% endblock content %}

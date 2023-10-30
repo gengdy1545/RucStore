@@ -1,0 +1,15 @@
+{% extends "account_layout.html" %}
+{% block info %}
+    <h1>Manage order</h1><br>
+    {% if orders %}
+        {% for order in orders %}
+            <div class="content-section">
+            <a >ID: {{ order.id}}</a><br>
+            <a >Time: {{ order.start_time}}</a><br>
+            <a >Price: {{ order.total_price }}</a><br>
+            <a >Status : unshipped</a><br>
+                <a href={{ url_for("show_order_details",id=order.id) }}>Detail</a>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endblock info %}

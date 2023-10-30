@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="content-section">
+    <h1>Market</h1>
+</div>
+<div>
+    {% if products %}
+    {% for product in products %}
+    {% if product.count !=0 %}
+    <div class="content-section">
+        <a>Shipper : {{ product.supplier.shipper}}</a><br>
+        <a>Product name: {{ product.name }}</a><br>
+        <a>Product price: {{ product.price }}</a><br>
+        <a>Product count: {{ product.count }}</a><br>
+        {% if current_user.table_name =="Customer" %}
+            <a href={{ url_for("add_product",id=product.id) }}>Buy it</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% else %}
+    <div class="content-section">
+        <h2>Waiting for supplier to supply product</h2>
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

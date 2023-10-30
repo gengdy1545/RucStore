@@ -1,0 +1,6 @@
+{% extends "account_layout.html" %}
+{% block info %}
+    <a href={{ url_for("update_info") }}>Manage profile</a><br><br>
+    <a href={{ url_for("customer_order_manage") }}>Manage orders</a><br><br>
+    <a href={{ url_for("customer_consignee_manage") }}>Manage consignee</a><br><br>
+{% endblock info %}

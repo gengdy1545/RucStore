@@ -139,6 +139,7 @@ pip install email-validator -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```shell
 pip install werkzeug==2.3.0 -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
+
 ## Ubuntu 配置
 使用 ubuntu 的同学可以使用如下教程安装 MySQL
 

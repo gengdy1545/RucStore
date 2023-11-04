@@ -14,3 +14,7 @@
 - Web 框架：Flask
 - 前端框架: Bootstrap
 - 推荐编辑器：VSCode
+
+## 实验文档
+- [环境配置](_doc/RucStore%20实现文档.md)
+- [项目实现](_doc/RucStore%20实现文档.md) 

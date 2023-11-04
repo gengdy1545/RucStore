@@ -16,5 +16,5 @@
 - 推荐编辑器：VSCode
 
 ## 实验文档
-- [环境配置](_doc/RucStore%20实现文档.md)
+- [环境配置](_doc/RucStore%20配置文档.md)
 - [项目实现](_doc/RucStore%20实现文档.md) 

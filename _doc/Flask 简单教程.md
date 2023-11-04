@@ -83,6 +83,44 @@ def index():
 > 
 > 乍一看，render_template 似乎就是之前使用的重定向函数 redirect，redirect 将 URL 变成重定向的 URL，但是 render_template 则不会改变 URL，而是将动态数据和静态 HTML 模板结合实现页面的动态展示。
 
+## Flask 模板继承
+Jinja(Flaks 模板渲染库)最有力的部分就是模板继承。模板继承允许你创建一个基础“骨架模板”，这个模板中包含站点的常用元素，定义可以被子模块继承的 block
+
+在下面的 html 文件中，`{% block %}` 标记定义了两个可以被子模板填充的块。block 标记告诉模板渲染引擎这是一个可以被子模板重载的部分。
+
+```html
+<!-- 具体可参考 _demo/templates/inheritance_layout.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% endblock %} - My Webpage</title>
+</head>
+<body>
+    <div id="content">{% block content %}{% endblock %}</div>
+</body>
+</html>
+```
+
+子模板如下所示，这里的 `{% extends %}` 标记是关键，它告诉模板渲染引擎这个模板“扩展”了另一个模板。
+```html
+<!-- 具体可参考 _demo/templates/inheritance_index.html -->
+{% extends "layout.html" %}
+{% block title %}Index{% endblock %}
+{% block content %}
+    <h1>Index</h1>
+    <p>Welcome on my awesome homepage.</p>
+{% endblock %}
+```
+
+运行如下的 python 文件，访问 http://127.0.0.1:5000 我们可以看到继承了 layout 页面的 index 页面
+
+```python
+具体可参考 _demo/inheritance.py
+@app.route('/')
+def index():
+    return render_template('inheritance_index.html')
+```
+
 ## Flask 静态文件
 
 Web 应用程序通常需要静态文件，例如 JS 文件或支持网页显示的 CSS 文件，这些文件是从包或者 static 文件夹中提供。

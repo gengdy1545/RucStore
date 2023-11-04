@@ -175,7 +175,7 @@ class User(db.Model,UserMixin):
 ### 注册界面
 ![ruc_store_3](../pics/ruc_store_3.png)
 
-在 [route.py](../src/store/routes.py) 文件中，我们访问 **http://localhost:5000** 或者 **http://localhost:5000/home**，即可访问到网站主页。
+在 [route.py](../src/store/routes.py) 文件中，我们访问 **http://localhost:5000** 或者 **http://localhost:5000/home** 即可访问到网站主页。
 ```python
 @app.route('/')
 @app.route("/home")

@@ -97,6 +97,18 @@ Bootstrap 自带的大部分组件需要原来 JavaScript 才能起作用。具�
 
 在 main 部分左边实现中，我们用到了 **Flask 消息闪现**，大家可以通过 [Flask 消息闪现示例](https://dormousehole.readthedocs.io/en/latest/patterns/flashing.html) 来快速理解。
 
+```html
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+```
+
 ### 小结
 在 layout 实现中，大家重点需要关注的有两点
 * 根据登录状态和登录用户来切换 header 内容，请结合后续内容理解

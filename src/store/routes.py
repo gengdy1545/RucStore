@@ -58,7 +58,7 @@ def login():
         user = table.query.filter_by(email=form.email.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             table_id = user.id
-            user_user = User.query.filter_by(table_id=table_id,table_name=table_name).first()  #用User 表来登录 表示权限 以及角色
+            user_user = User.query.filter_by(table_id=table_id,table_name=table_name).first()
             login_user(user_user,remember=form.remember.data)
             return redirect(url_for('home'))
         else:

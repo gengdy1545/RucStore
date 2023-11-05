@@ -5,7 +5,7 @@ from flask_login import LoginManager
 from flask_mail import Mail
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = r"mysql://root:D+atm712@127.0.0.1:3306/ruc_store"
+app.config["SQLALCHEMY_DATABASE_URI"] = r"mysql://username:password@127.0.0.1:3306/database"
 app.config['SECRET_KEY'] = 'secret_key'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 

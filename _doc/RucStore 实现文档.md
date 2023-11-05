@@ -3,16 +3,35 @@
 > 
 > 希望你们可以多多查阅**官方文档**，借助多方工具搜集相关信息，尽其所能理解代码。
 
-- [前提准备](#前提准备)
-- [项目实现](#项目实现)
+- [如何运行和查看本项目的效果](#如何运行和查看本项目的效果)
+- [如何学习和理解本项目](#如何学习和理解本项目)
   - [前端框架](#前端框架)
   - [layout 实现](#layout-实现)
+    - [\<head\>](#head)
+    - [\<body\>](#body)
+    - [小结](#小结)
   - [注册和登录](#注册和登录)
-- [项目运行](#项目运行)
+    - [table 设计](#table-设计)
+    - [注册](#注册)
+    - [登录](#登录)
 
-## 前提准备
+## 如何运行和查看本项目的效果
 * 安装 python3.x 环境
 * 按照 [配置文档](RucStore%20配置文档.md) 配置 MySQL 和 Flask
+
+在 mysql 执行 `ruc_store.sql`，可以通过 [source](https://www.runoob.com/mysql/mysql-database-import.html) 命令导入数据。
+
+修改 `src/__init__.py` 文件中 `app.config["SQLALCHEMY_DATABASE_URI"]`，username、password、database 分别对应 MySQL 的用户名、密码和项目所使用的数据库（如果是通过 `ruc_store.sql` 生成的数据库，该项为 **ruc_store**），同时参考 [secret key](https://stackoverflow.com/questions/34902378/where-do-i-get-secret-key-for-flask) 随机生成 `app.config['SECRET_KEY']`
+
+最后在 `src` 目录下执行命令 `python run.py` 运行项目，默认情况下使用 **5000** 端口访问
+
+![ruc_store_1](../pics/ruc_store_1.png)
+
+![ruc_store_3](../pics/ruc_store_3.png)
+
+![ruc_store_4](../pics/ruc_store_4.png)
+
+## 如何学习和理解本项目
 * 通过 [Flask 文档](Flask%20简单教程.md) 学习并运行了 _demo
 * 必须了解 **flask_login**、**flask_sqlalchemy** 、**flask_wtf** 的使用
   - [flask_login 教程](https://flask-login-cn.readthedocs.io/zh/latest/)
@@ -24,7 +43,6 @@
   - [CSS 教程](https://www.runoob.com/css/css-tutorial.html)
   - [Flask 教程](https://dormousehole.readthedocs.io/en/latest/)
 
-## 项目实现
 ### 前端框架
 考虑到同学们的前端知识，本项目实现并不对 HTML 和 CSS 做出过多要求，但是希望大家能借助互联网尝试调整甚至美化界面。
 
@@ -123,7 +141,6 @@ Bootstrap 自带的大部分组件需要原来 JavaScript 才能起作用。具�
 * main 主体部分继承，其实就一句话 `{% block content %}{% endblock %}`
 
 ### 注册和登录
-#### 涉及的文件
 
 * [routes.py](../src/store/routes.py)
 * [forms.py](../src/store/forms.py)
@@ -180,7 +197,7 @@ class User(db.Model,UserMixin):
     table_id = db.Column(db.Integer,nullable=False)
 ```
 
-#### 注册界面
+#### 注册
 ![ruc_store_3](../pics/ruc_store_3.png)
 
 在 [route.py](../src/store/routes.py) 文件中，我们访问 **http://localhost:5000** 或者 **http://localhost:5000/home** 即可访问到网站主页。
@@ -268,7 +285,7 @@ def register():
     return render_template('register.html', title='Register', form=form)
 ```
 
-#### 登录界面
+#### 登录
 ![ruc_store_4](../pics/ruc_store_4.png)
 
 在 [layout.html](../src/store/templates/layout.html) 文件,我们需要设置在未登录界面时**导航栏的 Sign in 导航跳转**(第 41 行)，这里 url_for('login') 即对应 [route.py](../src/store/routes.py) 中 login 函数的实现
@@ -291,10 +308,3 @@ class LoginForm(FlaskForm):
 最后我们在 [route.py](../src/store/routes.py) 定义视图函数 login。如果我们提交表单的数据满足 validators 且没有抛出异常，则 form.validate_on_submit() == True，然后我们根据表单数据选择对应用户的 table 查询用户和密码是否正确。因为我们将 email 作为了一个唯一性标识，所以我们不妨选择 email 来进行查询，即 `table.query.filter_by(email=form.email.data).first()`，非空则说明用户存在。同时，对比用户密码是否正确 `bcrypt.check_password_hash(user.password, form.password.data)`。如果都没问题，我们使用 login_user 函数登录。登录不成功则使用 flash 消息闪现
 
 ![ruc-store_5](../pics/ruc_store_5.png)
-
-## 项目运行
-在 mysql 执行 `ruc_store.sql`，可以通过 [source](https://www.runoob.com/mysql/mysql-database-import.html) 命令导入数据。
-
-修改 `src/__init__.py` 文件中 `app.config["SQLALCHEMY_DATABASE_URI"]`，username、password、database 分别对应 MySQL 的用户名、密码和项目所使用的数据库（如果是通过 `ruc_store.sql` 生成的数据库，该项为 **ruc_store**），同时参考 [secret key](https://stackoverflow.com/questions/34902378/where-do-i-get-secret-key-for-flask) 随机生成 `app.config['SECRET_KEY']`
-
-最后在 `src` 目录下执行命令 `python run.py` 运行项目，默认情况下使用 **5000** 端口访问

@@ -14,6 +14,8 @@
     - [table 设计](#table-设计)
     - [注册](#注册)
     - [登录](#登录)
+    - [登出](#登出)
+- [如何扩展实现本项目](#如何扩展实现本项目)
 
 ## 如何运行和查看本项目的效果
 * 安装 python3.x 环境
@@ -307,4 +309,26 @@ class LoginForm(FlaskForm):
 
 最后我们在 [route.py](../src/store/routes.py) 定义视图函数 login。如果我们提交表单的数据满足 validators 且没有抛出异常，则 form.validate_on_submit() == True，然后我们根据表单数据选择对应用户的 table 查询用户和密码是否正确。因为我们将 email 作为了一个唯一性标识，所以我们不妨选择 email 来进行查询，即 `table.query.filter_by(email=form.email.data).first()`，非空则说明用户存在。同时，对比用户密码是否正确 `bcrypt.check_password_hash(user.password, form.password.data)`。如果都没问题，我们使用 login_user 函数登录。登录不成功则使用 flash 消息闪现
 
-![ruc-store_5](../pics/ruc_store_5.png)
+![ruc_store_5](../pics/ruc_store_5.png)
+
+#### 登出
+在用户登录后，可以看到 header 导航栏有 log out 选项
+
+![ruc_store_6](../pics/ruc_store_6.png)
+
+我们在视图函数 logout 中实现，使用 logout_user() 登出即可
+```python
+@app.route("/logout")
+def logout():
+    logout_user()
+    return redirect(url_for('home'))
+```
+
+## 如何扩展实现本项目
+本项目相比于现在成熟的购物系统，还有很多很多不足，同学们可以结合实际情况丰富功能或者重构项目。这里提供一些思路抛砖引玉
+* 顾客多个收货地址管理
+* 商家店员雇佣管理
+* 存在订单的商品下架（这可以视为本项目的一个 bug）
+* 丰富商品信息，增加图片、类别等
+* 商品推荐系统
+* ……

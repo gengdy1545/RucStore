@@ -126,29 +126,20 @@ def update_info():
 @login_required
 def update_password():
     if current_user.table_name == "Customer":
-        form = UpdatePasswordForm()
-        role = Customer.query.filter_by(id=current_user.table_id).first()
-        if form.validate_on_submit():
-            hashed_password = bcrypt.generate_password_hash(password=form.password.data).decode("utf-8")
-            role.password = hashed_password
-            role.confirm_password = form.confirm_password.data
-            db.session.add(role)
-            db.session.commit()
-            flash('Your password has been updated', 'success')
-            return redirect(url_for("home"))
-        return render_template("update_password.html", form=form)
+        table = Customer
     elif current_user.table_name == "Supplier":
-        form = UpdatePasswordForm()
-        role = Supplier.query.filter_by(id=current_user.table_id).first()
-        if form.validate_on_submit():
-            hashed_password = bcrypt.generate_password_hash(password=form.password.data).decode("utf-8")
-            role.password = hashed_password
-            role.confirm_password = form.confirm_password.data
-            db.session.add(role)
-            db.session.commit()
-            flash('Your password has been updated', 'success')
-            return redirect(url_for("home"))
-        return render_template("update_password.html", form=form)
+        table = Supplier
+    form = UpdatePasswordForm()
+    role = table.query.filter_by(id=current_user.table_id).first()
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(password=form.password.data).decode("utf-8")
+        role.password = hashed_password
+        role.confirm_password = form.confirm_password.data
+        db.session.add(role)
+        db.session.commit()
+        flash('Your password has been updated', 'success')
+        return redirect(url_for("home"))
+    return render_template("update_password.html", form=form)
     
 
 @app.route("/customer/consignee", methods=["POST","GET"])

@@ -100,44 +100,27 @@ def supplier_account(username):
 @login_required
 def update_info():
     if current_user.table_name == "Customer":
-        form = UpdateInfo()
-        role = Customer.query.filter_by(id=current_user.table_id).first()
-        if form.validate_on_submit():
-            role.username = form.username.data
-            role.email = form.email.data
-            db.session.add(role)
-            db.session.commit()
-            user = User.query.filter_by(id=current_user.id).first()
-            user.username = form.username.data
-            user.email = form.email.data
-            db.session.add(user)
-            db.session.commit()
-            flash('Profile updated successfully', 'success')
-            return redirect(url_for("home"))
-        if request.method == "GET":
-            form.username.data = role.username
-            form.email.data = role.email
-        return render_template("update_info.html", form=form)
+        table = Customer
     elif current_user.table_name == "Supplier":
-        form = UpdateInfo()
-        role = Supplier.query.filter_by(id=current_user.table_id).first()
-        if form.validate_on_submit():
-            role.username = form.username.data
-            role.email = form.email.data
-            db.session.add(role)
-            db.session.commit()
-            user = User.query.filter_by(id=current_user.id).first()
-            user.username = form.username.data
-            user.email = form.email.data
-            db.session.add(user)
-            db.session.commit()
-            flash('Profile updated successfully', 'success')
-            return redirect(url_for("home"))
-        if request.method == "GET":
-            form.username.data = role.username
-            form.email.data = role.email
-        return render_template("update_info.html", form=form)
-
+        table = Supplier
+    form = UpdateInfo()
+    role = table.query.filter_by(id=current_user.table_id).first()
+    if form.validate_on_submit():
+        role.username = form.username.data
+        role.email = form.email.data
+        db.session.add(role)
+        db.session.commit()
+        user = User.query.filter_by(id=current_user.id).first()
+        user.username = form.username.data
+        user.email = form.email.data
+        db.session.add(user)
+        db.session.commit()
+        flash('Profile updated successfully', 'success')
+        return redirect(url_for("home"))
+    if request.method == "GET":
+        form.username.data = role.username
+        form.email.data = role.email
+    return render_template("update_info.html", form=form)
 
 @app.route("/update/password",methods=["GET","POST"])
 @login_required

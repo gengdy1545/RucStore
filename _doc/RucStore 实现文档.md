@@ -15,6 +15,7 @@
     - [注册](#注册)
     - [登录](#登录)
     - [登出](#登出)
+
 - [如何扩展实现本项目](#如何扩展实现本项目)
 
 ## 如何运行和查看本项目的效果
@@ -311,6 +312,24 @@ class LoginForm(FlaskForm):
 
 ![ruc_store_5](../pics/ruc_store_5.png)
 
+Customer 登录后，header 将增加 Cart、Settings、Logout 导航
+
+```html
+<!--  见 layout.html 第 32 - 35 行 -->
+{% if current_user.table_name == "Customer" %}
+    <a class="nav-item nav-link" href={{ url_for("shopping_cart") }}>Cart</a>
+    <a class="nav-item nav-link" href="{{ url_for("customer_account",username=current_user.username) }}">Settings</a>
+    <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
+```
+Supplier 登录后，header 将增加 Settings、Logout 导航
+
+```html
+<!--  见 layout.html 第 36 - 38 行 -->
+{% elif current_user.table_name == "Supplier" %}
+    <a class="nav-item nav-link" href="{{ url_for("supplier_account",username=current_user.username) }}">Settings</a>
+    <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
+```
+
 #### 登出
 在用户登录后，可以看到 header 导航栏有 log out 选项
 
@@ -323,6 +342,180 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 ```
+
+### 个人信息管理
+* [accout_laytou.html](../src/store/templates/account_layout.html)
+* [customer_accout.html](../src/store/templates/customer_account.html)
+* [supplier_accout.html](../src/store/templates/supplier_account.html)
+* [update_consignee.html](../src/store/templates/update_consignee.html)
+* [form.py](../src/store/forms.py)
+
+#### 整体逻辑
+由于这部分涉及的文件较多，所以先陈述一下该部分整体逻辑。
+
+因为本项目设计目的主要还是用于商品交易，收获地址和发货地址是不可缺少的。所以我们在用户登录后，进行其他操作前都先验证用户的收获(发货)地址是否完善。只有该信息完善才能继续操作。实现思路就是，当 Supplier(Customer) 登录后，点击 header 导航栏的  (Cart)、Settings 都会验证收获地址是否完善（即是否为**字符串** "null"），如果没有完善则跳转到收货(发货)地址管理界面。
+
+![ruc_store_9](../pics/ruc_store_9.png)
+
+![ruc_store_10](../pics/ruc_store_10.png)
+
+当 Customer(Supplier) 登录并完善收货(发货)信息后，点击 header 导航部分的 Settings 即可进入到用户的信息管理、订单管理、收货(发货)地址管理等
+
+![ruc_store_11](../pics/ruc_store_11.png)
+
+![ruc_store_12](../pics/ruc_store_12.png)
+
+这部分我们重点关注 Manager Profile 和 Manage cosignee(shipper)，点击 Manager Profile 我们跳转到修改用户名、邮箱和密码的界面，点击 Manage consignee(shipper) 我们跳转到修改收货(发货)地址的界面。
+
+![ruc_store_13](../pics/ruc_store_13.png)
+
+![ruc_store_14](../pics/ruc_store_14.png)
+
+
+
+#### 用户名、邮箱和密码管理
+![ruc_store_8](../pics/ruc_store_8.png)
+
+由于 Customer 和 Supplier 都具有 username、email 和 password 属性，所以不妨统一处理。
+
+username 和 email 既存在了 Customer(Supplier)，也存在了 User，但幸运的是并不涉及表连接等操作，实质还是两个单表操作。
+
+在 [form.py](../src/store/forms.py) 中，我们定义 username 和 email 更新的 form
+
+```python
+class UpdateInfo(FlaskForm):
+    username = StringField('Username',validators=[DataRequired(), Length(min=2, max=20)])
+    email = StringField('Mail',validators=[DataRequired(), Email()])
+    submit = SubmitField('Update')
+```
+
+同样地，因为我们将 email 作为了一个唯一性标识，所以还需要验证修改后的 email 是否满足需求
+
+```python
+    def validate_email(self, email):
+        if current_user.table_name == "Customer":
+            table = Customer
+        elif current_user.table_name == "Supplier":
+            table = Supplier
+        user = table.query.filter_by(email=email.data).first()
+        if user and user.username !=current_user.username:
+            raise ValidationError("Duplicate email")
+```
+
+在 [update_info.html](../src/store/templates/update_info.html) 文件中我们实现其前端效果
+
+最后我们在 [route.py](../src/store/routes.py) 定义视图函数 update_info。表单成功提交并通过验证后，我们进行更新操作，只不过需要对 Cutomer(Supplier) 和 User 各做一次。如果 methoad == "GET"，对 form.xxx.data 赋值，这样前端能够显示我们修改前的各项值
+```python
+@app.route("/update/info",methods=["GET","POST"])
+@login_required
+def update_info():
+    if current_user.table_name == "Customer":
+        table = Customer
+    elif current_user.table_name == "Supplier":
+        table = Supplier
+    form = UpdateInfo()
+    role = table.query.filter_by(id=current_user.table_id).first()
+    if form.validate_on_submit():
+        role.username = form.username.data
+        role.email = form.email.data
+        db.session.add(role)
+        db.session.commit()
+        user = User.query.filter_by(id=current_user.id).first()
+        user.username = form.username.data
+        user.email = form.email.data
+        db.session.add(user)
+        db.session.commit()
+        flash('Profile updated successfully', 'success')
+        return redirect(url_for("home"))
+    if request.method == "GET":
+        form.username.data = role.username
+        form.email.data = role.email
+    return render_template("update_info.html", form=form)
+```
+
+password 我们并不和 username 和 email 在同一个界面更新，这也方便同学们增加一些功能（例如：**修改密码前的安全验证**）在 Manage Profile 界面，点击 `Click here to change my password` 按钮即可进入到修改密码界面。
+
+![ruc_store_15](../pics/ruc_store_15.png)
+
+同样地，在 [form.py](../src/store/forms.py) 中，我们定义 password 更新的 form
+
+```python
+class UpdatePasswordForm(FlaskForm):
+    password = PasswordField('Password', validators=[DataRequired(),Length(min=6, max=20)])
+    confirm_password = PasswordField('Confirm Password',validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Update')
+```
+
+在 [update_password.html](../src/store/templates/update_password.html) 文件中我们实现其前端效果
+
+最后我们在 route.py 定义视图函数 customer_password. 
+
+```python
+@app.route("/update/password",methods=["GET","POST"])
+@login_required
+def update_password():
+    if current_user.table_name == "Customer":
+        table = Customer
+    elif current_user.table_name == "Supplier":
+        table = Supplier
+    form = UpdatePasswordForm()
+    role = table.query.filter_by(id=current_user.table_id).first()
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(password=form.password.data).decode("utf-8")
+        role.password = hashed_password
+        role.confirm_password = form.confirm_password.data
+        db.session.add(role)
+        db.session.commit()
+        flash('Your password has been updated', 'success')
+        return redirect(url_for("home"))
+    return render_template("update_password.html", form=form)
+```
+
+#### 收货和发货地址管理
+![ruc_store_7](../pics/ruc_store_7.png)
+
+收货地址管理和发货地址管理几乎完全一样，这里以收货地址为例说明。
+
+用户的收货地址存在 `Customer` 表中，所以收获地址管理只涉及 `Customer` 单表操作。
+
+在 [form.py](../src/store/forms.py) 中，我们定义收获地址更新的 form
+```python
+class UpdateConsigneeForm(FlaskForm):
+    consignee = StringField("Consignee",validators=[InputRequired(),Length(min=2,max=20)])
+    address = StringField("Address",validators=[InputRequired(),Length(min=10,max=40)])
+    telephone = StringField("Telephone",validators=[InputRequired(),Length(max=20,min=9)])
+    submit = SubmitField("Update")
+```
+
+在 [update_consignee.html](../src/store/templates/update_consignee.html) 文件中我们实现其前端效果
+
+最后我们在 route.py 定义视图函数 customer_consignee_manage. 注意，当 methoads == "GET" 时，我们给 form.xxx.data 赋值，这样前端能够显示我们修改前的各项值（default 为**字符串** "null"） 
+
+```python
+@app.route("/customer/consignee", methods=["POST","GET"])
+@login_required
+def customer_consignee_manage():
+    if current_user.table_name != "Customer":
+        abort(403)
+    address = Customer.query.filter_by(id=current_user.table_id).first()
+    form = UpdateConsigneeForm()
+    if form.validate_on_submit():
+        address.consignee = form.consignee.data
+        address.address = form.address.data
+        address.telephone = form.telephone.data
+        db.session.commit()
+        flash("Shipping address updated successfully!","success")
+    elif request.method =="GET":
+        form.consignee.data = address.consignee
+        form.address.data = address.address
+        form.telephone.data = address.telephone
+    return render_template("update_consignee.html",form=form)
+```
+
+> 至此，相信大家应当对构建 form，前端效果和视图函数的一套流程已经相当熟悉。
+
+#### 
+
 
 ## 如何扩展实现本项目
 本项目相比于现在成熟的购物系统，还有很多很多不足，同学们可以结合实际情况丰富功能或者重构项目。这里提供一些思路抛砖引玉

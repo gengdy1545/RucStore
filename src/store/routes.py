@@ -444,7 +444,7 @@ def customer_confirm_order(id):
 def supplier_order_manage():
     if current_user.table_name != "Supplier":
         abort(403)
-    unshipped_orders = Order.query.filter_by(customer_id=current_user.table_id,status=1).all()
+    unshipped_orders = Order.query.filter_by(status=1).all()
     return render_template("order_manage.html", unshipped_orders=unshipped_orders)
 
 

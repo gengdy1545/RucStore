@@ -206,7 +206,6 @@ class User(db.Model,UserMixin):
 ```
 
 #### 注册
-![ruc_store_3](../pics/ruc_store_3.png)
 
 在 [route.py](../src/store/routes.py) 文件中，我们访问 **http://localhost:5000** 或者 **http://localhost:5000/home** 即可访问到网站主页。
 ```python
@@ -244,7 +243,7 @@ class RegistrationForm(FlaskForm):
             raise ValidationError("Duplicate email")
 ```
 
-在 [register.html](../src/store/templates/register.html) 文件中我们实现其前端效果，以 RegistrationForm 中的 email 为例(对应 registre.html 第 34 - 46 行)，因为 validators=[DataRequired(), Email()]，所以会判断 email 是否为空且是否符合邮箱格式。同时因为我们定义了 validata_email 函数，所以还会判断该邮箱是否被其他用户使用了。如果不符合要求，form.role.errors 则不为空，我们会将 form.role 增加 [class=is-invalid](https://bootstrapshuffle.com/cn/classes/forms/is-invalid)，同时显示 error 
+在 [register.html](../src/store/templates/register.html) 文件中我们实现其前端，以 RegistrationForm 中的 email 为例(对应 registre.html 第 34 - 46 行)，因为 validators=[DataRequired(), Email()]，所以会判断 email 是否为空且是否符合邮箱格式。同时因为我们定义了 validata_email 函数，所以还会判断该邮箱是否被其他用户使用了。如果不符合要求，form.role.errors 则不为空，我们会将 form.role 增加 [class=is-invalid](https://bootstrapshuffle.com/cn/classes/forms/is-invalid)，同时显示 error 
 ```html
 <div class="form-group">
     {{ form.role.label(class="form-control-label") }}
@@ -260,6 +259,8 @@ class RegistrationForm(FlaskForm):
     {% endif %}
 </div>
 ```
+
+![ruc_store_3](../pics/ruc_store_3.png)
 
 最后我们在 [route.py](../src/store/routes.py) 定义视图函数 register。如果我们提交表单的数据满足 validators 且没有抛出异常（例如 validate_email 在邮箱已使用时会抛出异常），则 form.validate_on_submit() == True，然后我们根据表单数据插入 Customer(Supplier) 和 User 表合适的条目。这里，我们用到了 bcrypt 对 password 进行加密。
 ```python
@@ -294,7 +295,6 @@ def register():
 ```
 
 #### 登录
-![ruc_store_4](../pics/ruc_store_4.png)
 
 在 [layout.html](../src/store/templates/layout.html) 文件,我们需要设置在未登录界面时**导航栏的 Sign in 导航跳转**(第 41 行)，这里 url_for('login') 即对应 [route.py](../src/store/routes.py) 中 login 函数的实现
 ```html
@@ -311,7 +311,9 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Sign in')
 ```
 
-在 [login.html](../src/store/templates/login.html) 文件中我们实现其前端效果
+在 [login.html](../src/store/templates/login.html) 文件中我们实现其前端
+
+![ruc_store_4](../pics/ruc_store_4.png)
 
 最后我们在 [route.py](../src/store/routes.py) 定义视图函数 login。如果我们提交表单的数据满足 validators 且没有抛出异常，则 form.validate_on_submit() == True，然后我们根据表单数据选择对应用户的 table 查询用户和密码是否正确。因为我们将 email 作为了一个唯一性标识，所以我们不妨选择 email 来进行查询，即 `table.query.filter_by(email=form.email.data).first()`，非空则说明用户存在。同时，对比用户密码是否正确 `bcrypt.check_password_hash(user.password, form.password.data)`。如果都没问题，我们使用 login_user 函数登录。登录不成功则使用 flash 消息闪现
 
@@ -372,7 +374,28 @@ def logout():
 
 当 Customer(Supplier) 登录并完善收货(发货)信息后，点击 header 导航部分的 Settings 即可进入到用户的信息管理、订单管理、收货(发货)地址管理等
 
+```html
+<!-- 见 customer_accout.html -->
+{% extends "account_layout.html" %}
+{% block info %}
+    <a href={{ url_for("update_info") }}>Manage profile</a><br><br>
+    <a href={{ url_for("customer_order_manage") }}>Manage orders</a><br><br>
+    <a href={{ url_for("customer_consignee_manage") }}>Manage consignee</a><br><br>
+{% endblock info %}
+```
+
 ![ruc_store_11](../pics/ruc_store_11.png)
+
+```html
+<!-- 见 supplier_accout.html -->
+{% extends "account_layout.html" %}
+{% block info %}
+    <a href={{ url_for("update_info") }}>Manager profile</a><br><br>
+    <a href={{ url_for("supplier_product_manage") }}>Manager products</a><br><br>
+    <a href={{ url_for("supplier_order_manage") }}>Manager orders</a><br><br>
+    <a href={{ url_for("supplier_shipper_manage") }}>Manager shipper</a><br><br>
+{% endblock info %}
+```
 
 ![ruc_store_12](../pics/ruc_store_12.png)
 
@@ -387,7 +410,6 @@ def logout():
 ![ruc_store_17](../pics/ruc_store_17.png)
 
 #### 用户名、邮箱和密码管理
-![ruc_store_8](../pics/ruc_store_8.png)
 
 由于 Customer 和 Supplier 都具有 username、email 和 password 属性，所以不妨统一处理。
 
@@ -415,7 +437,9 @@ class UpdateInfo(FlaskForm):
             raise ValidationError("Duplicate email")
 ```
 
-在 [update_info.html](../src/store/templates/update_info.html) 文件中我们实现其前端效果
+在 [update_info.html](../src/store/templates/update_info.html) 文件中我们实现其前端
+
+![ruc_store_8](../pics/ruc_store_8.png)
 
 最后我们在 [route.py](../src/store/routes.py) 定义视图函数 update_info。表单成功提交并通过验证后，我们进行更新操作，只不过需要对 Cutomer(Supplier) 和 User 各做一次。如果 methoad == "GET"，对 form.xxx.data 赋值，这样前端能够显示我们修改前的各项值
 ```python
@@ -448,8 +472,6 @@ def update_info():
 
 password 我们并不和 username 和 email 在同一个界面更新，这也方便同学们增加一些功能（例如：**修改密码前的安全验证**）在 Manage Profile 界面，点击 `Click here to change my password` 按钮即可进入到修改密码界面。
 
-![ruc_store_15](../pics/ruc_store_15.png)
-
 同样地，在 [form.py](../src/store/forms.py) 中，我们定义 password 更新的 form
 
 ```python
@@ -459,7 +481,9 @@ class UpdatePasswordForm(FlaskForm):
     submit = SubmitField('Update')
 ```
 
-在 [update_password.html](../src/store/templates/update_password.html) 文件中我们实现其前端效果
+在 [update_password.html](../src/store/templates/update_password.html) 文件中我们实现其前端
+
+![ruc_store_15](../pics/ruc_store_15.png)
 
 最后我们在 route.py 定义视图函数 customer_password. 
 
@@ -485,7 +509,6 @@ def update_password():
 ```
 
 #### 收货和发货地址管理
-![ruc_store_7](../pics/ruc_store_7.png)
 
 收货地址管理和发货地址管理几乎完全一样，这里以收货地址为例说明。
 
@@ -500,7 +523,9 @@ class UpdateConsigneeForm(FlaskForm):
     submit = SubmitField("Update")
 ```
 
-在 [update_consignee.html](../src/store/templates/update_consignee.html) 文件中我们实现其前端效果
+在 [update_consignee.html](../src/store/templates/update_consignee.html) 文件中我们实现其前端
+
+![ruc_store_7](../pics/ruc_store_7.png)
 
 最后我们在 route.py 定义视图函数 customer_consignee_manage. 注意，当 methoads == "GET" 时，我们给 form.xxx.data 赋值，这样前端能够显示我们修改前的各项值（default 为**字符串** "null"） 
 
@@ -525,7 +550,7 @@ def customer_consignee_manage():
     return render_template("update_consignee.html",form=form)
 ```
 
-> 至此，相信大家应当对构建 form，前端效果和视图函数的一套流程已经相当熟悉。
+> 至此，相信大家应当对构建 form，前端和视图函数的一套流程已经相当熟悉。
 
 #### 信息完善验证
 正如刚才所说，我们希望的逻辑是管理信息之前首先验证收货(发货)地址是否完善，所以我们需要判断：如果信息完善跳转到正常信息管理界面，如果信息不完善则跳转到收货(发货)地址管理界面。所以对于 [layout](../src/store/templates/layout.html)  文件用到的 shopping_cart、customer_account、supplier_accout 视图函数，都需要进行相关判断
@@ -556,6 +581,177 @@ def customer_account(username):
     return render_template("customer_account.html", username=username)
 
 ```
+
+### 商品管理
+* [route.py](../src/store/routes.py)
+* [forms.py](../src/store/forms.py)
+* [models.py](../src/store/models.py)
+* [supplier_accout.html](../src/store/templates/supplier_account.html)
+* [supplier_product_manage.html](../src/store/templates/supplier_product_manage.html)
+* [supplier_new_product.html](../src/store/templates/supplier_new_product.html)
+* [supplier_update_product.html](../src/store/templates/supplier_update_product.html)
+
+
+#### table 设计
+Product 表在包含商品信息的同时，将 Supplier_id 作为外键
+
+```python
+class Product(db.Model):
+    __tablename__="Product"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(40),nullable=False,default="null")
+    price = db.Column(db.Float,nullable=False,default=0.00)
+    count = db.Column(db.Integer, nullable=False, default=0)
+    Supplier_id = db.Column(db.Integer,db.ForeignKey("Supplier.id"),nullable=False)
+```
+
+#### 添加商品
+Supplier 用户登录并完善发货地址后，点击 header 的 Settings，进入如下界面，`Manage products` 对应视图函数 `supplier_product_manage` ( [supplier_accout.html](../src/store/templates/supplier_account.html) 第 4 行)
+
+![ruc_store_12](../pics/ruc_store_12.png)
+
+```python
+@app.route("/supplier/products")
+@login_required
+def supplier_product_manage():
+    if current_user.table_name != "Supplier":
+        abort(403)
+    products = Product.query.all()
+    return render_template("supplier_product_manage.html",products=products)
+```
+
+[supplier_product_manage.html](../src/store/templates/supplier_product_manage.html) 文件逻辑很简单，在接受到视图函数 supplier_product_manage 传递的 `products` 参数后，如果非空则列出所有 product。无论是否有 product 我们均增加添加商品 `supplier_new_product` 的跳转
+
+```html
+{% extends "account_layout.html" %}
+{% block info %}
+    <h1>Manage product</h1>
+    {% if products %}
+        {% for product in products %}
+            <div class="content-section">
+                <a >Product name: {{ product.name }}</a><br>
+                <a >Product price: {{ product.price }}</a><br>
+                <a >Product count: {{ product.count }}</a><br>
+                <a>----------------------------------------------</a><br>
+                <a href={{ url_for("supplier_update_product",id=product.id) }}>Update</a>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <a href={{ url_for("supplier_delete_product",id=product.id) }}>Delete</a>
+            </div>
+        {% endfor %}
+        <div class="col-md-8">
+            <a href={{ url_for("supplier_new_product") }}>Add new product</a>
+        </div>
+    {% else %}
+        <a href={{ url_for("supplier_new_product") }}>Waiting for you to supply product</a>
+    {% endif %}
+{% endblock info %}
+```
+
+![ruc_store_19](../pics/ruc_store_19.png)
+
+![ruc_store_22](../pics/ruc_store_22.png)
+
+接下来依旧是通过构建 form，前端和视图函数三步来实现增加商品的功能。
+
+在 [forms.py](../src/store/forms.py) 文件中，我们增加 ProductForm
+
+```python
+class ProductForm(FlaskForm):
+    name = StringField('Product name',validators=[DataRequired(), Length(min=2, max=40)])
+    price =FloatField("Product price", validators=[DataRequired()])
+    count = IntegerField("Product count", validators=[DataRequired()])
+    confirm = IntegerField("Confirm Product count",validators=[DataRequired(), EqualTo("count")])
+    submit = SubmitField("Add")
+```
+
+在 [supplier_new_product.html](../src/store/templates/supplier_new_product.html) 文件中，我们实现前端
+
+![ruc_store_20](../pics/ruc_store_20.png)
+
+最后我们在 [route.py](../src/store/routes.py) 定义视图函数 supplier_new_product。商品信息通过提交的表单获取，而 supplier_id 通过 current_user.table_id 获取
+
+```python
+@app.route("/supplier/products/new", methods=["GET","POST"])
+@login_required
+def supplier_new_product():
+    if current_user.table_name != "Supplier":
+        abort(403)
+    form = ProductForm()
+    if form.validate_on_submit():
+        product = Product(name=form.name.data,price=form.price.data,count=form.count.data,supplier_id=current_user.table_id)
+        db.session.add(product)
+        db.session.commit()
+        flash("Your product was added successfully", "success")
+        return redirect(url_for("supplier_product_manage"))
+    return render_template("supplier_new_product.html",form=form)
+```
+
+![ruc_store_20](../pics/ruc_store_21.png)
+
+### 修改商品
+> **该功能和添加商品可以说一模一样，大家可以思考实现在不改变功能的基础上合并实现**
+
+在 [forms.py](../src/store/forms.py) 文件中，我们增加 UpdateProductForm
+
+```python
+class UpdateProductForm(FlaskForm):
+    name = StringField('Product name',validators=[InputRequired(), Length(min=2, max=40)])
+    price = FloatField("Product price", validators=[InputRequired()])
+    count = IntegerField("Product count", validators=[InputRequired()])
+    confirm = IntegerField("Confirm Product count", validators=[InputRequired(), EqualTo("count")])
+    submit = SubmitField("Update")
+```
+
+在 [supplier_update_product.html](../src/store/templates/supplier_update_product.html) 文件中，我们实现前端
+
+![ruc_store_23](../pics/ruc_store_23.png)
+
+最后我们在 [route.py](../src/store/routes.py) 定义视图函数 supplier_update_product。函数参数 id 通过 [supplier_product_manage.html](../src/store/templates/supplier_product_manage.html) 第 11 行获取。如果 methoad == "GET"，对 form.xxx.data 赋值，这样前端能够显示我们修改前的各项值
+
+```python
+@app.route("/supplier/product/update/<int:id>",methods=["GET","POST"])
+@login_required
+def supplier_update_product(id):
+    if current_user.table_name != "Supplier" or \
+            Product.query.filter_by(id=id).first().supplier.id != current_user.table_id:
+        abort(403)
+    form = UpdateProductForm()
+    if form.validate_on_submit():
+        product = Product.query.filter_by(id = id).first()
+        product.name = form.name.data
+        product.price = form.price.data
+        product.count = form.count.data
+        db.session.add(product)
+        db.session.commit()
+        flash("Your product has been updated successfully", "success")
+    elif request.method == "GET":
+        product = Product.query.filter_by(id=id).first()
+        form.name.data = product.name
+        form.price.data = product.price
+        form.count.data = product.count
+    return render_template("supplier_update_product.html", id=id, form=form)
+```
+
+![ruc_store_20](../pics/ruc_store_21.png)
+
+#### 删除商品
+在 [route.py](../src/store/routes.py) 定义视图函数 supplier_delete_product。函数参数 id 通过 [supplier_product_manage.html](../src/store/templates/supplier_product_manage.html) 第 13 行获取。
+
+```python
+@app.route("/supplier/product/delete/<int:id>",methods=["POST","GET"])
+@login_required
+def supplier_delete_product(id):
+    if current_user.table_name != "Supplier" or \
+            Product.query.filter_by(id=id).first().supplier.id != current_user.table_id:
+        abort(403)
+    product = Product.query.filter_by(id=id).first()
+    db.session.delete(product)
+    db.session.commit()
+    flash("Your product has been deleted successfully","success")
+    return redirect(url_for("supplier_product_manage"))
+```
+
+![ruc_store_24](../pics/ruc_store_24.png)
 
 ## 如何扩展实现本项目
 本项目相比于现在成熟的购物系统，还有很多很多不足，同学们可以结合实际情况丰富功能或者重构项目。这里提供一些思路抛砖引玉

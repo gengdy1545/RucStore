@@ -15,6 +15,10 @@
     - [注册](#注册)
     - [登录](#登录)
     - [登出](#登出)
+  - [个人信息管理](#个人信息管理)
+    - [整体逻辑](#整体逻辑)
+    - [用户名、邮箱和密码管理](#用户名邮箱和密码管理)
+    - [收货和发货地址管理](#收货和发货地址管理)
 
 - [如何扩展实现本项目](#如何扩展实现本项目)
 
@@ -151,6 +155,7 @@ Bootstrap 自带的大部分组件需要原来 JavaScript 才能起作用。具�
 * [layout.html](../src/store/templates/layout.html)
 * [login.html](../src/store/templates/login.html)
 * [register.html](../src/store/templates/register.html)
+* [home.html](../src/store/templates/home.html)
 
 #### table 设计
 在设计之前，我们首先需要明确自己需要**实现哪些功能**？实现这些功能我们**需要哪些依赖**？针对这个项目的注册登录，我们可能需要实现如下功能：
@@ -344,11 +349,17 @@ def logout():
 ```
 
 ### 个人信息管理
+* [route.py](../src/store/routes.py)
+* [form.py](../src/store/forms.py)
+* [layout.html](../src/store/templates/layout.html)
+* [home.html](../src/store/templates/home.html)
 * [accout_laytou.html](../src/store/templates/account_layout.html)
 * [customer_accout.html](../src/store/templates/customer_account.html)
 * [supplier_accout.html](../src/store/templates/supplier_account.html)
 * [update_consignee.html](../src/store/templates/update_consignee.html)
-* [form.py](../src/store/forms.py)
+* [update_shipper.html](../src/store/templates/update_shipper.html)
+* [update_password.html](../src/store/templates/update_password.html)
+* [update_info.html](../src/store/templates/update_info.html)
 
 #### 整体逻辑
 由于这部分涉及的文件较多，所以先陈述一下该部分整体逻辑。
@@ -371,7 +382,9 @@ def logout():
 
 ![ruc_store_14](../pics/ruc_store_14.png)
 
+![ruc_store_16](../pics/ruc_store_16.png)
 
+![ruc_store_17](../pics/ruc_store_17.png)
 
 #### 用户名、邮箱和密码管理
 ![ruc_store_8](../pics/ruc_store_8.png)
@@ -514,8 +527,35 @@ def customer_consignee_manage():
 
 > 至此，相信大家应当对构建 form，前端效果和视图函数的一套流程已经相当熟悉。
 
-#### 
+#### 信息完善验证
+正如刚才所说，我们希望的逻辑是管理信息之前首先验证收货(发货)地址是否完善，所以我们需要判断：如果信息完善跳转到正常信息管理界面，如果信息不完善则跳转到收货(发货)地址管理界面。所以对于 [layout](../src/store/templates/layout.html)  文件用到的 shopping_cart、customer_account、supplier_accout 视图函数，都需要进行相关判断
 
+```html
+{% if current_user.table_name == "Customer" %}
+    <a class="nav-item nav-link" href={{ url_for("shopping_cart") }}>Cart</a>
+    <a class="nav-item nav-link" href="{{ url_for("customer_account",username=current_user.username) }}">Settings</a>
+    <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
+{% elif current_user.table_name == "Supplier" %}
+    <a class="nav-item nav-link" href="{{ url_for("supplier_account",username=current_user.username) }}">Settings</a>
+    <a class="nav-item nav-link" href="{{ url_for('logout') }}">Logout</a>
+{% endif %}
+```
+
+例如在 customer_account 视图函数中，我们验证 consignee、address或telephone的其中之一是否为默认初始字符串 "null"
+
+```python
+@app.route("/customer/<string:username>/account")
+@login_required
+def customer_account(username):
+    if current_user.table_name != "Customer":
+        abort(403)
+    customer = Customer.query.filter_by(id=current_user.table_id).first()
+    if customer.consignee == "null" or customer.address == "null" or customer.telephone == "null":
+        flash("Please complete your consignee information as soon as possible","warning")
+        return redirect(url_for("customer_consignee_manage"))
+    return render_template("customer_account.html", username=username)
+
+```
 
 ## 如何扩展实现本项目
 本项目相比于现在成熟的购物系统，还有很多很多不足，同学们可以结合实际情况丰富功能或者重构项目。这里提供一些思路抛砖引玉

@@ -18,3 +18,5 @@
 ## 实验文档
 - [环境配置](_doc/RucStore%20配置文档.md)
 - [项目实现](_doc/RucStore%20实现文档.md) 
+
+[Please use github issues to ask questions](https://github.com/gengdy1545/RucStore/issues)

@@ -11,7 +11,7 @@
     - [\<body\>](#body)
     - [小结](#小结)
   - [注册和登录](#注册和登录)
-    - [table 设计](#table-设计)
+    - [User table](#user-table)
     - [注册](#注册)
     - [登录](#登录)
     - [登出](#登出)
@@ -24,6 +24,10 @@
     - [添加商品](#添加商品)
     - [修改商品](#修改商品)
     - [删除商品](#删除商品)
+  - [订单管理](#订单管理)
+    - [Order table](#order-table)
+    - [购物车](#购物车)
+    - [订单](#订单)
 - [如何扩展实现本项目](#如何扩展实现本项目)
 
 ## 如何运行和查看本项目的效果
@@ -161,7 +165,7 @@ Bootstrap 自带的大部分组件需要原来 JavaScript 才能起作用。具�
 * [register.html](../src/store/templates/register.html)
 * [home.html](../src/store/templates/home.html)
 
-#### table 设计
+#### User table
 在设计之前，我们首先需要明确自己需要**实现哪些功能**？实现这些功能我们**需要哪些依赖**？针对这个项目的注册登录，我们可能需要实现如下功能：
 * Customer 注册登录
 * Supplier 注册登录
@@ -757,11 +761,347 @@ def supplier_delete_product(id):
 
 ![ruc_store_24](../pics/ruc_store_24.png)
 
+### 订单管理
+* [route.py](../src/store/routes.py)
+* [forms.py](../src/store/forms.py)
+* [models.py](../src/store/models.py)
+* [home.py](../src/store/templates/home.html)
+
+#### Order table
+我们并不是对一件商品的交易产生一条订单，而是对一次**清空购物车**(可能包含一件或多件商品的交易)产生一条订单。所以我们需要设计两个表，OrderDetail 负责记录某件商品的交易信息，Order 负责记录订单记录订单信息。OrderDetail 设置外键 product_id 关联到商品，外键 order_id 关联到订单。
+
+![ruc_store_25](../pics/ruc_store_25.png)
+
+在实现的时候，可以近似地将顾客的购物车视作一个**未提交**的订单。当顾客向购物车中添加商品时，将商品交易添加到该订单中；当顾客从购物车中移出商品时，将商品交易从订单中移出；当顾客清空购物车时，将该订单提交。所以，我们不妨在 Order 订单表中增加 status 列以表示订单的状态(未提交、未发货、发货中、已完成)
+
+![ruc_store_34](../pics/ruc_store_34.png)
+
+> 通过我们自己的定义，有一个简单地推论： **一个用户同一时间最多拥有一个未提交的订单**，即对应到购物车
+
+```python
+class OrderDetail(db.Model):
+    __tablename__="OrderDetail"
+    id = db.Column(db.Integer,primary_key=True)
+    count = db.Column(db.Integer, nullable=False)
+    order_id = db.Column(db.Integer,db.ForeignKey("Order.id"),nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("Product.id"),nullable=False)
+
+
+class Order(db.Model):
+    __tablename__ = "Order"
+    id = db.Column(db.Integer, primary_key=True)
+    status = db.Column(db.Integer, nullable=False, default=0)
+    start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    end_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    total_price =db.Column(db.Float,nullable=False, default=0.00)
+    customer_id = db.Column("customer_id", db.Integer,db.ForeignKey("Customer.id"),nullable=False)
+    orderdetails = db.relationship("OrderDetail",backref="order",lazy=True)
+```
+
+#### 购物车
+Customer 登录后即可在主界面看到商品信息(具体查看视图函数 `home` 和 [home.py](../src/store/templates/home.html) )
+
+![ruc_store_26](../pics/ruc_store_26.png)
+
+用户点击 Cart ( [layout.html](../src/store/templates/layout.html) 第 33 行)，跳转到 `shopping_cart`。正如之前所说，我们将购物车视作是一条未提交的订单，所以我们首先判断购物车对应的订单是否存在(通过用户名和状态可以唯一确定它)，不存在就创建一条，存在就列出所有商品并统计总价格。
+
+```python
+@app.route("/customer/cart")
+@login_required
+def shopping_cart():
+    if current_user.table_name != "Customer":
+        abort(403)
+    customer = Customer.query.filter_by(id=current_user.table_id).first()
+    if customer.consignee == "null" or customer.address == "null" or customer.telephone == "null":
+        flash("Please complete your consignee information as soon as possible","warning")
+        return redirect(url_for("customer_consignee_manage"))
+    cart = Order.query.filter_by(customer_id=current_user.table_id, status=0).first()
+    if cart is not None:
+        orderdetails = OrderDetail.query.filter_by(order_id=cart.id).all()
+        price = 0
+        for orderdetail in orderdetails:
+            product = Product.query.filter_by(id=orderdetail.product_id).first()
+            price = price+orderdetail.count*product.price
+        cart.total_price = price
+        db.session.add(cart)
+        db.session.commit()
+        return render_template("shopping_cart.html", orderdetails=orderdetails,cart=cart)
+    else:
+        cart = Order(customer_id=current_user.table_id)
+        db.session.add(cart)
+        db.session.commit()
+        orderdetails = None
+        return render_template("shopping_cart.html", orderdetails=orderdetails,cart=cart)
+```
+
+在 [shopping_cart.html](../src/store/templates/shopping_cart.html) 文件中实现前端
+
+![ruc_store_33](../pics/ruc_store_33.png)
+
+购买商品通过主界面 `Buy it` 将商品首先添加到购物车中
+
+![ruc_store_27](../pics/ruc_store_27.png)
+
+添加到购物车主要做两件事情：(1) 根据商品生成一条 OrderDetail 条目，包含购买数量(初始化 1)，商品 id 等；(2) 将商品与订单关联起来，实际上就是将生成条目的外键 order_id 设置为购物车对应的订单 id，如果不存在则首先生成 Order 条目。
+
+注意我们定义不能在一条订单中添加相同商品的多条记录，所以我们还需要判断购物车中是否已经存在我们想要添加的商品。
+
+```python
+@app.route("/customer/product/add/<int:id>", methods=["POST","GET"])
+@login_required
+def add_product(id):
+    if current_user.table_name != "Customer":
+        abort(403)
+    cart = Order.query.filter_by(customer_id=current_user.table_id, status=0).first()
+    if cart:
+        if OrderDetail.query.filter_by(order_id=cart.id, product_id=id).first() is None:
+            order_detail = OrderDetail(count=1, order_id=cart.id, product_id=id)
+            db.session.add(order_detail)
+            db.session.commit()
+            flash("This product has been successfully added to the shopping cart", "success")
+            return redirect(url_for("home"))
+        else:
+            flash("This product is already in the shopping cart", "warning")
+            return redirect(url_for("home"))
+    else:
+        cart = Order(customer_id=current_user.table_id)
+        db.session.add(cart)
+        db.session.commit()
+        order_detail = OrderDetail(count=1, order_id=cart.id, product_id=id)
+        db.session.add(order_detail)
+        db.session.commit()
+        flash("This product has been successfully added to the shopping cart", "success")
+        return redirect(url_for("home"))
+```
+
+![ruc_store_29](../pics/ruc_store_29.png)
+
+当我们向购物车中添加完合适的商品后，点击 header 的 Cart 导航，即可看到自己购物车的内容。
+
+![ruc_store_28](../pics/ruc_store_28.png)
+
+对于每个商品，我们还需提供增加数量、减少数量、删除商品的功能。这些功能都是对单表单条目的简单操作，只需要注意**商品数量理应在合适的范围内**
+
+```python
+@app.route("/customer/product/increase/<int:id>",methods=["POST","GET"])
+@login_required
+def add_by_1(id):
+    if current_user.table_name != "Customer":
+        abort(403)
+    cart = Order.query.filter_by(customer_id=current_user.table_id, status="0").first()
+    orderdetail = OrderDetail.query.filter_by(order_id=cart.id, product_id=id).first()
+    condition = orderdetail.count+1<=Product.query.filter_by(id=id).first().count and orderdetail.count>0
+    while condition:
+        orderdetail.count = orderdetail.count+1
+        db.session.add(orderdetail)
+        db.session.commit()
+        flash("Increase successfully", "success")
+        break
+    return redirect(url_for("shopping_cart"))
+```
+
+![ruc_store_30](../pics/ruc_store_30.png)
+
+```python
+@app.route("/customer/product/reduce/<int:id>",methods=["POST","GET"])
+@login_required
+def delete_by_1(id):
+    if current_user.table_name != "Customer":
+        abort(403)
+    cart = Order.query.filter_by(customer_id=current_user.table_id, status="0").first()
+    orderdetail = OrderDetail.query.filter_by(order_id=cart.id, product_id=id).first()
+    condition = orderdetail.count<=Product.query.filter_by(id=id).first().count and orderdetail.count-1>0
+    while condition:
+        orderdetail.count = orderdetail.count-1
+        db.session.add(orderdetail)
+        db.session.commit()
+        flash("Reduce successfully", "success")
+        break
+    return redirect(url_for("shopping_cart"))
+```
+
+![ruc_store_31](../pics/ruc_store_31.png)
+
+```python
+@app.route("/customer/product/delete/<int:id>",methods=["POST","GET"])
+@login_required
+def delete_product_from_shopping_car(id):
+    if current_user.table_name != "Customer":
+        abort(403)
+    cart = Order.query.filter_by(customer_id=current_user.table_id, status=0).first()
+    orderdetail = OrderDetail.query.filter_by(order_id=cart.id, product_id=id).first()
+    db.session.delete(orderdetail)
+    db.session.commit()
+    flash("Delete successfully", "success")
+    return redirect(url_for("shopping_cart"))
+```
+
+![ruc_store_32](../pics/ruc_store_32.png)
+
+当我们点击 `Confirm order`，需要做两件事情： (1)减少购买的商品的剩余量； (2)更改订单状态并添加时间信息。当然，因为在我们将商品添加到购物车到确认的一段时间内，可能发生其他顾客购买商品或者供应商修改商品数量，所以我们还需要首先判断商品剩余量是否还能满足我们需求
+
+```python
+@app.route("/customer/confirm_order/<int:id>",methods=["POST","GET"])
+@login_required
+def confirm_order(id):
+    if current_user.table_name != "Customer" or \
+            Order.query.filter_by(id=id).first().customer_id!=current_user.table_id:
+        abort(403)
+    cart = Order.query.filter_by(id=id).first()
+    for detail in cart.orderdetails:
+        product = Product.query.filter_by(id=detail.product_id).first()
+        if detail.count > product.count:
+            if product.count > 0:
+                flash("Insufficient supply","warning")
+                detail.count = 1
+                db.session.add(detail)
+                db.session.commit()
+                return redirect(url_for("shopping_cart"))
+            else:
+                flash("Insufficient supply", "warning")
+                row = detail
+                db.session.delete(row)
+                db.session.commit()
+                return redirect(url_for("shopping_cart"))
+        else:
+            product.count = product.count - detail.count
+            db.session.add(product)
+            db.session.commit()
+    cart.status = 1
+    cart.start_time = datetime.now()
+    db.session.add(cart)
+    db.session.commit()
+    return redirect(url_for("shopping_cart"))
+```
+
+#### 订单
+
+![ruc_store_34](../pics/ruc_store_34.png)
+
+Customer 清空购物车确认订单后，该订单就需要交由 Supplier 确认发货。
+
+> 注意: 我们当前支持**单供应商多顾客**，所以对于供应商来说，其可获得**所有用户**的**所有待发货订单**。
+
+Supplier 点击 header 的 Settings，进入 `Manage orders` 即可看到自己需要处理的订单信息。 [route.py](../src/store/routes.py) 中视图函数 supplier_order_manage 查询所有需要供应商发货的商品。
+
+```python
+@app.route("/supplier/orders")
+@login_required
+def supplier_order_manage():
+    if current_user.table_name != "Supplier":
+        abort(403)
+    unshipped_orders = Order.query.filter_by(status=1).all()
+    return render_template("order_manage.html", unshipped_orders=unshipped_orders)
+```
+
+在 [order_manager.html](../src/store/templates/order_manage.html) 中实现前端
+
+![ruc_store_35](../pics/ruc_store_35.png)
+
+点击确认发货则只需要修改订单状态即可
+
+```python
+@app.route("/supplier/orders/confirm_delive/<int:id>")
+@login_required
+def confirm_deliver_order(id):
+    if current_user.table_name != "Supplier":
+        abort(403)
+    order = Order.query.filter_by(id=id).first()
+    order.status = 2
+    db.session.add(order)
+    db.session.commit()
+    flash("Order shipped successfully","success")
+    return redirect(url_for("supplier_order_manage"))
+```
+
+Customer 点击 header 的 Settings，进入 `Manage orders` 即可看到自己所有的订单信息。
+
+```python
+@app.route("/customer/orders")
+@login_required
+def customer_order_manage():
+    if current_user.table_name != "Customer":
+        abort(403)
+    unshipped_orders = Order.query.filter_by(customer_id=current_user.table_id,status=1).all()
+    delivering_orders = Order.query.filter_by(customer_id=current_user.table_id, status=2).all()
+    completed_orders = Order.query.filter_by(customer_id=current_user.table_id, status=3).all()
+    return render_template("order_manage.html", unshipped_orders=unshipped_orders,delivering_orders=delivering_orders,completed_orders=completed_orders)
+
+```
+
+在 [order_manage.html](../src/store/templates/order_manage.html) 中实现前端
+
+![ruc_store_36](../pics/ruc_store_36.png)
+
+对于还未发货的订单，我们可以点击 Cancel 取消。实现的时候，注意需要**恢复商品原来的剩余量**
+
+```python
+@app.route("/customer/order/cancel/<int:id>")
+@login_required
+def cancel_order(id):
+    order =Order.query.filter_by(id=id).first()
+    if current_user.table_name != "Customer" or order.customer_id != current_user.table_id:
+        abort(403)
+    if order.status != 1:
+        flash("The order has been shipped","danger")
+        return redirect(url_for("customer_order_manage"))
+    else:
+        details = order.orderdetails
+        for detail in details:
+            product = Product.query.filter_by(id=detail.product_id).first()
+            product.count = product.count + detail.count
+            db.session.add(product)
+            db.session.commit()
+            db.session.delete(detail)
+            db.session.commit()
+        db.session.delete(order)
+        db.session.commit()
+        flash("Your order has been canceled successful!","success")
+        return redirect(url_for("customer_order_manage"))
+```
+
+对于在运输中商品，点击 Confirm 收货。实现只需要修改订单状态和完成时间
+
+```python
+@app.route("/customer/order/confirm/<int:id>")
+@login_required
+def customer_confirm_order(id):
+    if current_user.table_name != "Customer":
+        abort(403)
+    order = Order.query.filter_by(id=id).first()
+    order.status = 3
+    order.end_time = datetime.now()
+    db.session.add(order)
+    db.session.commit()
+    flash("You have confirmed the order", "success")
+    return redirect(url_for("customer_order_manage"))
+```
+
+对于 Customer 和 Supplier 来说，他们都可以点击订单列表的 Detail 查看订单详情
+
+```python
+@app.route("/order/<int:id>")
+@login_required
+def show_order_details(id):
+    if current_user.table_name == "Customer":
+        if Order.query.filter_by(id=id).first().customer_id != current_user.table_id:
+            abort(403)
+    order = Order.query.filter_by(id=id).first()
+    address = order.customer
+    details = order.orderdetails
+    return render_template("show_order_details.html",order=order,address=address,details=details)
+```
+
+在 [show_order_detail.html](../src/store/templates/show_order_details.html) 文件中实现前端
+
+![ruc_store_37](../pics/ruc_store_37.png)
+
 ## 如何扩展实现本项目
 本项目相比于现在成熟的购物系统，还有很多很多不足，同学们可以结合实际情况丰富功能或者重构项目。这里提供一些思路抛砖引玉
-* 顾客多个收货地址管理
-* 商家店员雇佣管理
-* 存在订单的商品下架（这可以视为本项目的一个 bug）
+* 支持多供应商
+* 支持顾客添加多个收货地址
+* 增加新角色 “打工人”
+* 支持存在订单的商品下架
 * 丰富商品信息，增加图片、类别等
 * 商品推荐系统
 * ……

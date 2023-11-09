@@ -19,7 +19,11 @@
     - [整体逻辑](#整体逻辑)
     - [用户名、邮箱和密码管理](#用户名邮箱和密码管理)
     - [收货和发货地址管理](#收货和发货地址管理)
-
+  - [商品管理](#商品管理)
+    - [Product table](#product-table)
+    - [添加商品](#添加商品)
+    - [修改商品](#修改商品)
+    - [删除商品](#删除商品)
 - [如何扩展实现本项目](#如何扩展实现本项目)
 
 ## 如何运行和查看本项目的效果
@@ -592,7 +596,7 @@ def customer_account(username):
 * [supplier_update_product.html](../src/store/templates/supplier_update_product.html)
 
 
-#### table 设计
+#### Product table
 Product 表在包含商品信息的同时，将 Supplier_id 作为外键
 
 ```python
@@ -688,7 +692,7 @@ def supplier_new_product():
 
 ![ruc_store_20](../pics/ruc_store_21.png)
 
-### 修改商品
+#### 修改商品
 > **该功能和添加商品可以说一模一样，大家可以思考实现在不改变功能的基础上合并实现**
 
 在 [forms.py](../src/store/forms.py) 文件中，我们增加 UpdateProductForm

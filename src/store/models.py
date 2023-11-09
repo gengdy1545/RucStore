@@ -47,7 +47,7 @@ class Product(db.Model):
     name = db.Column(db.String(40),nullable=False,default="null")
     price = db.Column(db.Float,nullable=False,default=0.00)
     count = db.Column(db.Integer, nullable=False, default=0)
-    Supplier_id = db.Column(db.Integer,db.ForeignKey("Supplier.id"),nullable=False)
+    supplier_id = db.Column(db.Integer,db.ForeignKey("Supplier.id"),nullable=False)
     order_detail = db.relationship("OrderDetail",backref="product",uselist=False,lazy=True)
 
 

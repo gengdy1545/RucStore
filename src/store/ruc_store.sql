@@ -41,7 +41,7 @@ CREATE TABLE `Product` (
     `name` VARCHAR(40) NOT NULL DEFAULT 'null',
     `price` FLOAT NOT NULL DEFAULT 0.00,
     `count` INT NOT NULL DEFAULT 0,
-    `Supplier_id` INT NOT NULL,
+    `supplier_id` INT NOT NULL,
     PRIMARY KEY(`id`),
     FOREIGN KEY (Supplier_id) REFERENCES Supplier (id)
 );

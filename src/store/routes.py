@@ -199,10 +199,8 @@ def supplier_new_product():
         abort(403)
     form = ProductForm()
     if form.validate_on_submit():
-        supplier = Supplier.query.filter_by(id=current_user.table_id).first()
-        product = Product(name=form.name.data,price=form.price.data,count=form.count.data)
-        supplier.products.append(product)
-        db.session.add(supplier)
+        product = Product(name=form.name.data,price=form.price.data,count=form.count.data,supplier_id=current_user.table_id)
+        db.session.add(product)
         db.session.commit()
         flash("Your product was added successfully", "success")
         return redirect(url_for("supplier_product_manage"))

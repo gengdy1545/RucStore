@@ -194,3 +194,17 @@ pip install werkzeug==2.3.0 -i https://pypi.tuna.tsinghua.edu.cn/simple
     ```
 
     现在我们就可以使用 `mysql -u root -p` 命令登陆 MySQL 了。
+
+6. 创建 ruc_store 数据库
+
+   使用 root 用户登录 MySQL 之后，创建新用户和 ruc_store 数据库
+   
+   ```bash
+   CREATE USER 'rucstore'@'%' IDENTIFIED BY 'password';
+   CREATE DATABASE ruc_store;
+   GRANT ALL PRIVILEGES ON ruc_store.* to 'rucstore'@'%';
+   FLUSH PRIVILEGES;
+   ```
+
+   
+   
